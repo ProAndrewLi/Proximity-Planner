@@ -235,6 +235,7 @@ export default function MapClient() {
     mapRef.current = map;
   }, []);
 
+  window.removeEventListener("eventSelected", centerOnEvent);
   return <div id="map" style={{ width: "100%", height: "100vh" }} />;
 }
 

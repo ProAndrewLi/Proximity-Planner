@@ -282,7 +282,11 @@ export default function Sidebar() {
   // Format date for display
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return "Select Date";
-    const date = new Date(dateStr);
+
+    // Parse the date string directly without timezone conversion
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',

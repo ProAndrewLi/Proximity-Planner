@@ -27,6 +27,15 @@ const map = new ol.Map({
 const markerLayer = map.getLayers().item(1);
 const markerSource = markerLayer.getSource();
 
+// Tear drop style
+// const tearDropStyle = new Style({
+//     image: new Icon({
+//         src: 'images/pin.jpg',
+//         anchor: [0.5, 1], // Anchor the point at the bottom center
+//         scale: 1
+//     })
+// });
+
 // Handle map click to get geographic coordinates
 map.on('click', function(event) {
     // Get the coordinate in Web Mercator projection (EPSG:3857)
@@ -51,15 +60,6 @@ map.on('click', function(event) {
     const marker = new ol.Feature({
         geometry: new ol.geom.Point(coordinate)
     });
-
-    // Tear drop style
-    // const tearDropStyle = new Style({
-    //     image: new Icon({
-    //         src: 'images/pin.svg',
-    //         anchor: [0.5, 1], // Anchor the point at the bottom center
-    //         scale: 1
-    //     })
-    // });
 
     // marker.setStyle(tearDropStyle);
     markerSource.addFeature(marker);

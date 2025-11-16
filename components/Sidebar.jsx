@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { saveEvent, deleteEvent, getEvents } from "../lib/events.js";
+import { saveEvent, deleteEvent, getEvent } from "../lib/events.js";
 
 export default function Sidebar() {
   const [mode, setMode] = useState("create");
@@ -12,7 +12,7 @@ export default function Sidebar() {
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   const [nearbyEvents, setNearbyEvents] = useState([]);
-
+  
   useEffect(() => {
     const date = new Date();
     const formatDate = date.toISOString().split("T")[0];
@@ -26,7 +26,7 @@ export default function Sidebar() {
   useEffect(() => {
     const loadNearby = async () => {
       try {
-        const events = await getEvents();
+        const events = await getEvent();
 
         if (!navigator.geolocation) {
           console.warn("No geolocation available.");

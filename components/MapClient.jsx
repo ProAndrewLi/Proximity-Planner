@@ -14,6 +14,7 @@ import Stroke from "ol/style/Stroke";
 import Point from "ol/geom/Point";
 import RegularShape from "ol/style/RegularShape";
 import Circle from "ol/style/Circle";
+import LineString from "ol/geom/LineString";
 import { fromLonLat, toLonLat } from "ol/proj";
 
 import { getEvent } from "../lib/events.js";
@@ -81,7 +82,7 @@ export default function MapClient() {
     });
 
     /* --------------------------
-     *  CLICK HANDLER
+     *  CLICK HANDLER - UPDATED TO ADD RED PIN
      * -------------------------- */
     map.on("click", (evt) => {
       const [lon, lat] = toLonLat(evt.coordinate);
@@ -104,8 +105,15 @@ export default function MapClient() {
           new CustomEvent("eventSelected", { detail: clickedEvent })
         );
       } else {
-        // Clicked empty space → remove dotted line
+        // Clicked empty space → remove dotted line AND add red pin
         clearRoute();
+        
+        // Clear any existing click pins and add new red pin
+        clickVector.clear();
+        const clickFeature = new ol.Feature({
+          geometry: new Point(evt.coordinate),
+        });
+        clickVector.addFeature(clickFeature);
       }
 
       renderEvents();
@@ -196,6 +204,16 @@ export default function MapClient() {
     });
 
     /* --------------------------
+     *  CLEAR RED PIN FUNCTION
+     * -------------------------- */
+    function clearRedPin() {
+      clickVector.clear();
+    }
+
+    // Listen for clear events to remove red pin
+    window.addEventListener("clearDetails", clearRedPin);
+
+    /* --------------------------
      *  USER LOCATION
      * -------------------------- */
     if (navigator.geolocation) {
@@ -243,7 +261,7 @@ export default function MapClient() {
       const end = fromLonLat([ev.lon, ev.lat]);
 
       const line = new ol.Feature({
-        geometry: new ol.geom.LineString([start, end]),
+        geometry: new LineString([start, end]),
       });
 
       routeSource.addFeature(line);
@@ -326,8 +344,10 @@ export default function MapClient() {
      * -------------------------- */
     mapRef.current = map;
 
-    return () =>
+    return () => {
       window.removeEventListener("eventSelected", handleSidebarSelect);
+      window.removeEventListener("clearDetails", clearRedPin);
+    };
   }, []);
 
   /* --------------------------

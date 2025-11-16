@@ -16,7 +16,7 @@ import RegularShape from "ol/style/RegularShape";
 import Circle from "ol/style/Circle";
 import { fromLonLat, toLonLat } from "ol/proj";
 
-import { getEvent } from "../lib/events.js";   
+import { getEvent } from "../lib/events.js";
 
 export default function MapClient() {
   const mapRef = useRef(null);
@@ -26,7 +26,7 @@ export default function MapClient() {
 
   let userLocation = null;
   let selectedEventId = null;
-  let fullEventList = []; 
+  let fullEventList = [];
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -100,7 +100,7 @@ export default function MapClient() {
      * -------------------------- */
     async function loadEvents() {
       try {
-        fullEventList = await getEvent(); 
+        fullEventList = await getEvent();
         renderEvents();
         window.dispatchEvent(
           new CustomEvent("filteredEvents", { detail: fullEventList })
@@ -183,6 +183,7 @@ export default function MapClient() {
         map.getView().setCenter(fromLonLat(userLocation));
         map.getView().setZoom(17);
       });
+      window.location.reload();
     }
 
     /* --------------------------
@@ -196,8 +197,8 @@ export default function MapClient() {
       const a =
         Math.sin(dLat / 2) ** 2 +
         Math.cos(lat1 * Math.PI / 180) *
-          Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon / 2) ** 2;
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
 
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
@@ -264,33 +265,112 @@ export default function MapClient() {
           right: "10px",
           zIndex: 1000,
           background: "white",
-          padding: "12px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+          padding: "20px",
+          borderRadius: "16px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "20px",
+          border: "2px solid #e2e8f0",
+          minWidth: "220px"
         }}
       >
         {/* Distance Filter */}
-        <div>
-          <input
-            id="distanceInput"
-            type="number"
-            placeholder="Max distance (km)"
-            style={{ width: "160px", padding: "5px" }}
-          />
-          <button
-            id="applyDistance"
-            style={{ marginLeft: "5px", padding: "6px" }}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <label
+            htmlFor="distanceInput"
+            style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#4a5568",
+              marginBottom: "4px"
+            }}
           >
-            Apply
-          </button>
+            Max Distance (km)
+          </label>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <input
+              id="distanceInput"
+              type="number"
+              placeholder="Enter km"
+              min="0"
+              step="0.1"
+              style={{
+                flex: 1,
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "2px solid #e2e8f0",
+                fontSize: "14px",
+                outline: "none",
+                transition: "all 0.2s ease",
+                background: "white",
+                fontFamily: "'Inter', sans-serif"
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "#667eea";
+                e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "#e2e8f0";
+                e.target.style.boxShadow = "none";
+              }}
+            />
+            <button
+              id="applyDistance"
+              style={{
+                padding: "12px 16px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                whiteSpace: "nowrap",
+                boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                fontFamily: "'Inter', sans-serif"
+              }}
+              onMouseOver={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
+              }}
+            >
+              Apply
+            </button>
+          </div>
         </div>
 
         {/* Recenter */}
-        <button id="recenterBtn" style={{ padding: "6px" }}>
-          Recenter to Me
+        <button
+          id="recenterBtn"
+          style={{
+            padding: "14px 16px",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.3s ease",
+            boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+            fontFamily: "'Inter', sans-serif"
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = "translateY(-2px)";
+            e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
+          }}
+        >
+          Recenter to My Location
         </button>
       </div>
 

@@ -492,9 +492,51 @@ html, body {
   }
 }
 
-/* Ensure proper z-index stacking */
 .form-container,
 .calendar-popup,
 .time-popup {
   isolation: isolate;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.close-button {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #4a5568;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.close-button:hover {
+  background: #cbd5e0;
+  transform: scale(1.1);
+}
+
+.details-title {
+  color: #2d3748;
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex: 1;
 }

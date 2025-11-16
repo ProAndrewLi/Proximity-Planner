@@ -24,6 +24,7 @@ export default function Sidebar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState("");
 
+  // Get today's date in local timezone without timezone conversion
   useEffect(() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -52,42 +53,39 @@ export default function Sidebar() {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  // Handle date selection without timezone issues
   const handleDateSelect = (day) => {
-    // Create the date in local timezone without time component
-    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    // Create date using local timezone components
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
     
-    // Format the date without timezone conversion
-    const year = newDate.getFullYear();
-    const month = String(newDate.getMonth() + 1).padStart(2, '0');
-    const dayOfMonth = String(newDate.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${dayOfMonth}`;
+    // Format the date as YYYY-MM-DD without timezone conversion
+    const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     setDate(formattedDate);
     setSelectedDate(formattedDate);
     setShowDatePicker(false);
   };
 
+  // Check if day is today using local date
   const isToday = (day) => {
     const today = new Date();
-    return (
-      day === today.getDate() &&
-      currentMonth.getMonth() === today.getMonth() &&
-      currentMonth.getFullYear() === today.getFullYear()
-    );
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const compareDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    
+    return todayLocal.getTime() === compareDate.getTime();
   };
 
+  // Check if day is selected using local date comparison
   const isSelected = (day) => {
     if (!selectedDate) return false;
     
-    // Parse the selected date without timezone issues
-    const [year, month, dayOfMonth] = selectedDate.split('-').map(Number);
-    const selected = new Date(year, month - 1, dayOfMonth);
+    // Create dates for comparison using local timezone
+    const [yearStr, monthStr, dayStr] = selectedDate.split('-').map(Number);
+    const selectedDateLocal = new Date(yearStr, monthStr - 1, dayStr);
+    const compareDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     
-    return (
-      day === selected.getDate() &&
-      currentMonth.getMonth() === selected.getMonth() &&
-      currentMonth.getFullYear() === selected.getFullYear()
-    );
+    return selectedDateLocal.getTime() === compareDate.getTime();
   };
 
   // Generate calendar days
@@ -183,6 +181,14 @@ export default function Sidebar() {
       window.removeEventListener("clearDetails", clearHandler);
     };
   }, []);
+
+  // Close event details
+  const closeDetails = () => {
+    setSelectedEvent(null);
+    setMode("create");
+    // Also clear any map selection
+    window.dispatchEvent(new CustomEvent("clearDetails"));
+  };
 
   // ---------------------------
   //   Create Event
@@ -482,7 +488,16 @@ export default function Sidebar() {
         {/* EVENT DETAILS */}
         {mode === "details" && selectedEvent && (
           <div className="details-container">
-            <h2 className="details-title">Event Details</h2>
+            <div className="details-header">
+              <h2 className="details-title">Event Details</h2>
+              <button 
+                className="close-button"
+                onClick={closeDetails}
+                aria-label="Close details"
+              >
+                ×
+              </button>
+            </div>
             <div className="event-details">
               <p><span className="detail-label">Name:</span> {selectedEvent.name}</p>
               <p><span className="detail-label">Organization:</span> {selectedEvent.org}</p>

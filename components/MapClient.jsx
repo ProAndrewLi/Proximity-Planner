@@ -16,32 +16,30 @@ import RegularShape from "ol/style/RegularShape";
 import Circle from "ol/style/Circle";
 import { fromLonLat, toLonLat } from "ol/proj";
 
-import { getEvent } from "../lib/events.js";
+import { getEvent } from "../lib/events.js";   
 
 export default function MapClient() {
   const mapRef = useRef(null);
-
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
   const userLocationSource = new VectorSource();
 
   let userLocation = null;
   let selectedEventId = null;
+  let fullEventList = []; 
 
   useEffect(() => {
     if (mapRef.current) return;
 
     /* --------------------------
-     *  MAP INIT
+     *  LAYERS
      * -------------------------- */
     const clickLayer = new VectorLayer({
       source: clickVector,
       style: pinStyle("red"),
     });
 
-    const eventLayer = new VectorLayer({
-      source: eventVector,
-    });
+    const eventLayer = new VectorLayer({ source: eventVector });
 
     const userLocationLayer = new VectorLayer({
       source: userLocationSource,
@@ -54,6 +52,9 @@ export default function MapClient() {
       }),
     });
 
+    /* --------------------------
+     *  MAP
+     * -------------------------- */
     const map = new ol.Map({
       target: "map",
       layers: [
@@ -72,8 +73,7 @@ export default function MapClient() {
      *  CLICK HANDLER
      * -------------------------- */
     map.on("click", (evt) => {
-      const coord = evt.coordinate;
-      const [lon, lat] = toLonLat(coord);
+      const [lon, lat] = toLonLat(evt.coordinate);
 
       window.dispatchEvent(new CustomEvent("clearDetails"));
       localStorage.setItem("lastClick", JSON.stringify({ lon, lat }));
@@ -81,21 +81,18 @@ export default function MapClient() {
       let clickedEvent = null;
 
       map.forEachFeatureAtPixel(evt.pixel, (feature) => {
-        if (feature.get("eventData")) {
-          clickedEvent = feature.get("eventData");
-        }
+        if (feature.get("eventData")) clickedEvent = feature.get("eventData");
       });
 
+      selectedEventId = clickedEvent ? clickedEvent.id : null;
+
       if (clickedEvent) {
-        selectedEventId = clickedEvent.id;
         window.dispatchEvent(
           new CustomEvent("eventSelected", { detail: clickedEvent })
         );
-      } else {
-        selectedEventId = null;
       }
 
-      renderEvents(); // Update event marker styles
+      renderEvents();
     });
 
     /* --------------------------
@@ -103,12 +100,11 @@ export default function MapClient() {
      * -------------------------- */
     async function loadEvents() {
       try {
-        const events = await getEvent();
-
-        localStorage.setItem("events", JSON.stringify(events));
+        fullEventList = await getEvent(); 
         renderEvents();
-
-        console.log("Loaded events:", events.length);
+        window.dispatchEvent(
+          new CustomEvent("filteredEvents", { detail: fullEventList })
+        );
       } catch (err) {
         console.error("Failed to load events:", err);
       }
@@ -117,10 +113,10 @@ export default function MapClient() {
     loadEvents();
 
     /* --------------------------
-     *  EVENT RE-RENDER FUNCTION
+     *  RENDER EVENTS
      * -------------------------- */
-    function renderEvents(filteredList = null) {
-      const events = filteredList || JSON.parse(localStorage.getItem("events") || "[]");
+    function renderEvents(list = null) {
+      const events = list ?? fullEventList;
 
       eventVector.clear();
 
@@ -129,8 +125,8 @@ export default function MapClient() {
           geometry: new Point(fromLonLat([ev.lon, ev.lat])),
         });
 
-        f.setId(ev.id);
         f.set("eventData", ev);
+        f.setId(ev.id);
 
         if (selectedEventId === ev.id) {
           f.setStyle(pinStyle("blue"));
@@ -151,7 +147,7 @@ export default function MapClient() {
     }
 
     /* --------------------------
-     *  SIDEBAR CLICK HANDLER
+     *  SIDEBAR SELECTION
      * -------------------------- */
     function handleSidebarSelect(e) {
       const ev = e.detail;
@@ -174,29 +170,23 @@ export default function MapClient() {
      *  USER LOCATION
      * -------------------------- */
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lon = pos.coords.longitude;
-          const lat = pos.coords.latitude;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        userLocation = [pos.coords.longitude, pos.coords.latitude];
 
-          userLocation = [lon, lat];
+        userLocationSource.clear();
+        userLocationSource.addFeature(
+          new ol.Feature({
+            geometry: new Point(fromLonLat(userLocation)),
+          })
+        );
 
-          userLocationSource.clear();
-          userLocationSource.addFeature(
-            new ol.Feature({
-              geometry: new Point(fromLonLat([lon, lat])),
-            })
-          );
-
-          map.getView().setCenter(fromLonLat([lon, lat]));
-          map.getView().setZoom(17);
-        },
-        () => console.warn("User denied geolocation")
-      );
+        map.getView().setCenter(fromLonLat(userLocation));
+        map.getView().setZoom(17);
+      });
     }
 
     /* --------------------------
-     *  DISTANCE FILTER UI
+     *  HAVERSINE
      * -------------------------- */
     function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -205,28 +195,30 @@ export default function MapClient() {
 
       const a =
         Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * (Math.PI / 180)) *
-          Math.cos(lat2 * (Math.PI / 180)) *
+        Math.cos(lat1 * Math.PI / 180) *
+          Math.cos(lat2 * Math.PI / 180) *
           Math.sin(dLon / 2) ** 2;
 
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    const applyDistanceBtn = document.getElementById("applyDistance");
-    const distanceInput = document.getElementById("distanceInput");
-    const recenterBtn = document.getElementById("recenterBtn");
-
-    applyDistanceBtn.onclick = () => {
+    /* --------------------------
+     *  FILTER BUTTON
+     * -------------------------- */
+    document.getElementById("applyDistance").onclick = () => {
       if (!userLocation) return;
 
-      const km = parseFloat(distanceInput.value);
+      const km = parseFloat(document.getElementById("distanceInput").value);
       if (isNaN(km)) return;
 
-      const events = JSON.parse(localStorage.getItem("events") || "[]");
-
-      const filtered = events.filter((ev) => {
-        const d = haversine(userLocation[1], userLocation[0], ev.lat, ev.lon);
-        return d <= km;
+      const filtered = fullEventList.filter((ev) => {
+        const dist = haversine(
+          userLocation[1],
+          userLocation[0],
+          ev.lat,
+          ev.lon
+        );
+        return dist <= km;
       });
 
       renderEvents(filtered);
@@ -236,7 +228,10 @@ export default function MapClient() {
       );
     };
 
-    recenterBtn.onclick = () => {
+    /* --------------------------
+     *  RECENTER BUTTON
+     * -------------------------- */
+    document.getElementById("recenterBtn").onclick = () => {
       if (!userLocation) return;
 
       map.getView().animate({
@@ -251,18 +246,17 @@ export default function MapClient() {
      * -------------------------- */
     mapRef.current = map;
 
-    return () => {
+    return () =>
       window.removeEventListener("eventSelected", handleSidebarSelect);
-    };
   }, []);
 
   /* --------------------------
-   * UI + MAP RENDER
+   * UI OVER THE MAP
    * -------------------------- */
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
-      
-      {/* UI OVERLAY */}
+      {/* SEPARATED UI CONTROLS */}
       <div
         style={{
           position: "absolute",
@@ -270,28 +264,33 @@ export default function MapClient() {
           right: "10px",
           zIndex: 1000,
           background: "white",
-          padding: "10px",
+          padding: "12px",
           borderRadius: "8px",
           boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "12px",
         }}
       >
+        {/* Distance Filter */}
         <div>
           <input
             id="distanceInput"
             type="number"
-            placeholder="Distance (km)"
-            style={{ width: "120px", padding: "5px" }}
+            placeholder="Max distance (km)"
+            style={{ width: "160px", padding: "5px" }}
           />
-          <button id="applyDistance" style={{ marginLeft: "5px", padding: "5px" }}>
+          <button
+            id="applyDistance"
+            style={{ marginLeft: "5px", padding: "6px" }}
+          >
             Apply
           </button>
         </div>
 
-        <button id="recenterBtn" style={{ padding: "5px" }}>
-          Recenter to My Location
+        {/* Recenter */}
+        <button id="recenterBtn" style={{ padding: "6px" }}>
+          Recenter to Me
         </button>
       </div>
 
@@ -308,7 +307,7 @@ function pinStyle(color) {
     new Style({
       image: new Circle({
         radius: 8.5,
-        fill: new Fill({ color: color }),
+        fill: new Fill({ color }),
         displacement: [0, 16],
       }),
     }),
@@ -318,7 +317,7 @@ function pinStyle(color) {
         radius: 10,
         displacement: [0, -10],
         rotation: Math.PI,
-        fill: new Fill({ color: color }),
+        fill: new Fill({ color }),
       }),
     }),
     new Style({

@@ -30,7 +30,7 @@ const markerSource = markerLayer.getSource();
 // Tear drop style
 // const tearDropStyle = new Style({
 //     image: new Icon({
-//         src: 'images/pin.jpg',
+//         src: 'images/pin.png',
 //         anchor: [0.5, 1], // Anchor the point at the bottom center
 //         scale: 1
 //     })

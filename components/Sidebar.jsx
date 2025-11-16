@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { saveEvent, deleteEvent, getEvent } from "../lib/events.js";
+import "./Sidebar.css";
 
 export default function Sidebar() {
   const [mode, setMode] = useState("create");
@@ -26,7 +27,11 @@ export default function Sidebar() {
 
   useEffect(() => {
     const today = new Date();
-    const formatDate = today.toISOString().split("T")[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const formatDate = `${year}-${month}-${day}`;
+    
     setDate(formatDate);
     setSelectedDate(formatDate);
   }, []);
@@ -49,8 +54,15 @@ export default function Sidebar() {
   };
 
   const handleDateSelect = (day) => {
+    // Create the date in local timezone without time component
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    const formattedDate = newDate.toISOString().split("T")[0];
+    
+    // Format the date without timezone conversion
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, '0');
+    const dayOfMonth = String(newDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${dayOfMonth}`;
+    
     setDate(formattedDate);
     setSelectedDate(formattedDate);
     setShowDatePicker(false);
@@ -67,7 +79,11 @@ export default function Sidebar() {
 
   const isSelected = (day) => {
     if (!selectedDate) return false;
-    const selected = new Date(selectedDate);
+    
+    // Parse the selected date without timezone issues
+    const [year, month, dayOfMonth] = selectedDate.split('-').map(Number);
+    const selected = new Date(year, month - 1, dayOfMonth);
+    
     return (
       day === selected.getDate() &&
       currentMonth.getMonth() === selected.getMonth() &&
@@ -195,9 +211,16 @@ export default function Sidebar() {
       await saveEvent(event);
       setName("");
       setOrg("");
+      
+      // Reset date without timezone issues
       const today = new Date();
-      setDate(today.toISOString().split("T")[0]);
-      setSelectedDate(today.toISOString().split("T")[0]);
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const todayFormatted = `${year}-${month}-${day}`;
+      
+      setDate(todayFormatted);
+      setSelectedDate(todayFormatted);
       setHour("12");
       setMinute("00");
       setAmPm("PM");

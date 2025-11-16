@@ -17,13 +17,12 @@ import Circle from "ol/style/Circle";
 import { fromLonLat, toLonLat } from "ol/proj";
 
 import { getEvent } from "../lib/events.js";
+import { LineString } from "ol/geom.js";
 
 export default function MapClient() {
   const mapRef = useRef(null);
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
-
-  
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -90,6 +89,41 @@ export default function MapClient() {
 
         eventVector.addFeature(f);
       });
+
+      // Add dashed line
+      const line = new LineString([fromLonLat([lon, lat]), fromLonLat]);
+    });
+
+    window.addEventListener("eventSelected", (e) => {
+      const eventData = e.detail;
+      const coordinate = fromLonLat([eventData.lon, eventData.lat]);
+      
+      map.getView().getCenter(coordinate);
+      map.getView().setZoom(17);
+
+      clickVector.clear();
+      const feature = new od.Feature({ geometry: new Point(coord)});
+      clickVector.addFeature(feature);
+
+      eventVector.clear();
+      const saved = JSON.parse(localStorage.getItem("Event") || "[]");
+      saved.forEach((ev) => {
+        const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
+    f.set("eventData", ev);
+
+        if (ev.id === eventData.id) {
+          f.setStyle(pinStyle('blue'));
+        } else {
+          f.setStyle(new Style({
+            image: new CircleStyle({
+              radius: 7,
+              fill: new Fill({ color: "red" }),
+              stroke: new Stroke({ color: "#ffffff", width: 2 }),
+            })
+          }));
+        }
+        eventVector.addFeature(f);
+      })
     });
 
     // Initial load of events
@@ -101,7 +135,7 @@ export default function MapClient() {
       f.setStyle(new Style({
         image: new CircleStyle({
           radius: 7,
-          fill: new Fill({ color: "red" }),
+          fill: new Fill({ color: "blue" }),
           stroke: new Stroke({ color: "#ffffff", width: 2 }),
         })}));
 
@@ -109,7 +143,6 @@ export default function MapClient() {
     });
 
 
-    // In your MapClient component, replace the loadEvents function with:
     const loadEvents = async () => {
       try {
         const events = await getEvent();
@@ -119,7 +152,7 @@ export default function MapClient() {
             geometry: new Point(fromLonLat([ev.lon, ev.lat])),
           });
 
-          feature.setId(ev.id);       // <--- IMPORTANT FOR DELETE
+          feature.setId(ev.id);
           feature.set("eventData", ev);
 
           eventVector.addFeature(feature);
@@ -184,6 +217,21 @@ export default function MapClient() {
         }
       );
     }
+
+    const centerOnEvent = (e) => {
+      const ev = e.detail;
+      if (!ev) return;
+
+      const coord = fromLonLat([ev.lon, ev.lat]);
+
+      map.getView().animate({
+        center: coord,
+        duration: 350,
+        zoom: 18,
+      });
+    };
+    window.addEventListener("eventSelected", centerOnEvent);
+
     mapRef.current = map;
   }, []);
 

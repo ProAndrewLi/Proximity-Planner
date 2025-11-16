@@ -1,4 +1,3 @@
-
 import MapClient from "../components/MapClient";
 import Sidebar from "../components/Sidebar";
 import "../styles/globals.css";

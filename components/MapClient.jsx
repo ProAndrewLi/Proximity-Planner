@@ -16,49 +16,31 @@ import RegularShape from "ol/style/RegularShape";
 import Circle from "ol/style/Circle";
 import { fromLonLat, toLonLat } from "ol/proj";
 
+import { getEvent } from "../lib/events.js";
+
 export default function MapClient() {
   const mapRef = useRef(null);
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
+
+  
 
   useEffect(() => {
     if (mapRef.current) return;
 
     const clickLayer = new VectorLayer({
       source: clickVector,
-      style: [new Style({
-        image: new Circle({
-          radius: 8.5,
-          fill: new Fill({ color: 'red' }),
-          displacement: [0, 16],
-        })
-      }),
-      new Style({
-        image: new RegularShape({
-          points: 3,
-          radius: 10,
-          displacement: [0, -10],
-          rotation: Math.PI,
-          fill: new Fill({ color: 'red' }),
-        })
-      }),
-      new Style({
-        image: new Circle({
-          radius: 4,
-          fill: new Fill({ color: 'white' }),
-          displacement: [0, 16],
-        })
-      }),]
+      style: pinStyle('red')
     });
 
     const eventLayer = new VectorLayer({
       source: eventVector,
       style: new Style({
-        image: new CircleStyle({
-          radius: 7,
-          fill: new Fill({ color: "#0066ff" }),
-          stroke: new Stroke({ color: "#ffffff", width: 2 }),
-        }),
+        // image: new CircleStyle({
+        //   radius: 7,
+        //   fill: new Fill({ color: "#0066ff" }),
+        //   stroke: new Stroke({ color: "#ffffff", width: 2 }),
+        // }),
       }),
     });
 
@@ -100,31 +82,78 @@ export default function MapClient() {
     saved.forEach((ev) => {
       const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
       f.set("eventData", ev);
+      if(selected_event && ev.id === selected_event.id) f.setStyle(pinStyle('blue'));
+      else f.setStyle(new Style({
+        image: new CircleStyle({
+          radius: 7,
+          fill: new Fill({ color: "blue" }),
+          stroke: new Stroke({ color: "#ffffff", width: 2 }),
+        })}));
       eventVector.addFeature(f);
     });
 
     // In your MapClient component, replace the loadEvents function with:
     const loadEvents = async () => {
       try {
-        console.log("Loading events...");
-        const events = await getEvents(); // Use the updated function
+        const events = await getEvent();
 
         events.forEach((ev) => {
-          const f = new ol.Feature({
-            geometry: new Point(fromLonLat([ev.lon, ev.lat]))
+          const feature = new ol.Feature({
+            geometry: new Point(fromLonLat([ev.lon, ev.lat])),
           });
-          f.set("eventData", ev);
-          eventVector.addFeature(f);
+
+          feature.setId(ev.id);       // <--- IMPORTANT FOR DELETE
+          feature.set("eventData", ev);
+
+          eventVector.addFeature(feature);
         });
 
         console.log("Loaded events:", events.length);
-      } catch (error) {
-        console.error("Failed to load events:", error);
+      } catch (err) {
+        console.error("Failed to load events:", err);
       }
     };
+
+    loadEvents();
+
+    window.addEventListener("eventDeleted", (e) => {
+      const deletedId = e.detail;
+      const feature = eventVector.getFeatureById(deletedId);
+
+      if (feature) {
+        eventVector.removeFeature(feature);
+        console.log("Removed marker for", deletedId);
+      }
+    });
 
     mapRef.current = map;
   }, []);
 
   return <div id="map" style={{ width: "100%", height: "100vh" }} />;
+}
+
+function pinStyle(color) {
+  return [new Style({
+        image: new Circle({
+          radius: 8.5,
+          fill: new Fill({ color: color }),
+          displacement: [0, 16],
+        })
+      }),
+      new Style({
+        image: new RegularShape({
+          points: 3,
+          radius: 10,
+          displacement: [0, -10],
+          rotation: Math.PI,
+          fill: new Fill({ color: color }),
+        })
+      }),
+      new Style({
+        image: new Circle({
+          radius: 4,
+          fill: new Fill({ color: 'white' }),
+          displacement: [0, 16],
+        })
+      })];
 }

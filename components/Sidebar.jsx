@@ -7,8 +7,16 @@ export default function Sidebar() {
   const [mode, setMode] = useState("create");
   const [name, setName] = useState("");
   const [org, setOrg] = useState("");
+  const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
+
+  useEffect(() => {
+    const date = new Date();
+    const formatDate = date.toISOString().split('T')[0];
+    setDate(formatDate);
+    setTime("12:00");
+  }, []);
 
   useEffect(() => {
     const selectHandler = (e) => {
@@ -38,10 +46,16 @@ export default function Sidebar() {
 
   const confirm = async () => {
     const last = JSON.parse(localStorage.getItem("lastClick"));
-    const event = { name, org, time, lat: last.lat, lon: last.lon };
+    const dateTime = `${date} ${time}`;
+    const event = { name, org, time: dateTime, lat: last.lat, lon: last.lon };
 
     try {
       await saveEvent(event);
+      setName("");
+      setOrg("");
+      const today = new Date();
+      setDate(today.toISOString().split('T')[0]);
+      setTime("12:00");
       window.location.reload();
     } catch (error) {
       alert("Failed to save event: " + error.message);
@@ -68,6 +82,25 @@ export default function Sidebar() {
     }
   };
 
+  const formatDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return "Not specified";
+
+    try {
+      if (dateTimeStr.includes(' ')) {
+        const [datePart, timePart] = dateTimeStr.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute] = timePart.split(':');
+
+        const date = new Date(year, month - 1, day, hour, minute);
+        return date.toLocaleString();
+      }
+
+      return new Date(dateTimeStr).toLocaleString();
+    } catch (e) {
+      return dateTimeStr;
+    }
+  };
+
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       {mode === "create" && (
@@ -90,17 +123,47 @@ export default function Sidebar() {
       {mode === "form" && (
         <div>
           <h2>Create Event</h2>
-          <div>
-            <label>Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+              Event Name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            />
           </div>
-          <div>
-            <label>Organization</label>
-            <input value={org} onChange={(e) => setOrg(e.target.value)} />
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+              Organization
+            </label>
+            <input
+              value={org}
+              onChange={(e) => setOrg(e.target.value)}
+              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            />
           </div>
-          <div>
-            <label>Time Slot</label>
-            <input value={time} onChange={(e) => setTime(e.target.value)} />
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            />
+          </div>
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+              Time
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+            />
           </div>
 
           <button
@@ -112,6 +175,9 @@ export default function Sidebar() {
               background: "#0070f3",
               color: "white",
               borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "16px",
             }}
           >
             Confirm
@@ -129,7 +195,7 @@ export default function Sidebar() {
             <b>Organization:</b> {selectedEvent.org}
           </p>
           <p>
-            <b>Time:</b> {selectedEvent.time}
+            <b>Time:</b> {formatDateTime(selectedEvent.time)}
           </p>
           <p>
             <b>Location:</b> {selectedEvent.lat.toFixed(5)},{" "}
@@ -146,6 +212,8 @@ export default function Sidebar() {
               color: "white",
               borderRadius: "6px",
               fontWeight: "bold",
+              border: "none",
+              cursor: "pointer",
             }}
           >
             Delete Event

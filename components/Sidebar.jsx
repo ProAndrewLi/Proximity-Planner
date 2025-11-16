@@ -337,8 +337,7 @@ export default function Sidebar() {
                 border: "1px solid #ccc",
                 marginBottom: "10px",
                 cursor: "pointer",
-                background: selectedEvent?.id === ev.id ? "rgba(0, 100, 255, 0.15)" : "#fafafa",
-                fontWeight: selectedEvent?.id === ev.id ? "bold" : "normal",
+                background: "#fafafa"
               }}
             >
               <b>{ev.name}</b>

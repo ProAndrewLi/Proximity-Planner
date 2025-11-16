@@ -23,6 +23,7 @@ export default function MapClient() {
   const mapRef = useRef(null);
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
+  let userCoord = null;
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -91,7 +92,22 @@ export default function MapClient() {
       });
 
       // Add dashed line
-      const line = new LineString([fromLonLat([lon, lat]), fromLonLat]);
+      if (userCoord) {
+        const line = new LineString([(selected_event)?fromLonLat([selected_event.lon, selected_event.lat]):fromLonLat([lon, lat]), fromLonLat(userCoord)]);
+        const lineFeature = new Feature({
+          geometry: line,
+        });
+        const lineStyle = new Style({
+          stroke: new Stroke({
+            color: 'blue',
+            width: 2,
+            lineDash: [10, 10], // Dotted pattern: [dash length, gap length]
+          }),
+        });
+
+        lineFeature.setStyle(lineStyle);
+        eventVector.addFeature(lineFeature);
+      }
     });
 
     window.addEventListener("eventSelected", (e) => {
@@ -99,7 +115,6 @@ export default function MapClient() {
       const coordinate = fromLonLat([eventData.lon, eventData.lat]);
       
       map.getView().getCenter(coordinate);
-      map.getView().setZoom(17);
 
       clickVector.clear();
       const feature = new od.Feature({ geometry: new Point(coord)});
@@ -107,11 +122,19 @@ export default function MapClient() {
 
       eventVector.clear();
       const saved = JSON.parse(localStorage.getItem("Event") || "[]");
+      map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+        const data = feature.get("eventData");
+        if (data) {
+          event_select = true;
+          window.dispatchEvent(new CustomEvent("eventSelected", { detail: data }));
+          selected_event = data;
+        }
+      });
       saved.forEach((ev) => {
         const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
-    f.set("eventData", ev);
+        f.set("eventData", ev);
 
-        if (ev.id === eventData.id) {
+        if (selected_event && ev.id === eventData.id) {
           f.setStyle(pinStyle('blue'));
         } else {
           f.setStyle(new Style({
@@ -199,6 +222,7 @@ export default function MapClient() {
         (pos) => {
           const userLon = pos.coords.longitude;
           const userLat = pos.coords.latitude;
+          userCoord = [userLon, userLat];
 
           const userPoint = new ol.Feature({
             geometry: new Point(fromLonLat([userLon, userLat])),
@@ -231,11 +255,14 @@ export default function MapClient() {
       });
     };
     window.addEventListener("eventSelected", centerOnEvent);
-
+    
     mapRef.current = map;
+
+    return () => {
+      window.removeEventListener("eventSelected", centerOnEvent);
+    };
   }, []);
 
-  window.removeEventListener("eventSelected", centerOnEvent);
   return <div id="map" style={{ width: "100%", height: "100vh" }} />;
 }
 

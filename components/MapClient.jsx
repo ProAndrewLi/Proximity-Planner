@@ -71,6 +71,9 @@ export default function MapClient() {
         }
       });
 
+      // If no event was selected, clear selected_event
+      if(!event_select) selected_event = null;
+
       clickVector.clear();
       const feature = new ol.Feature({ geometry: new Point(coord) });
       if (!event_select) clickVector.addFeature(feature);
@@ -82,13 +85,18 @@ export default function MapClient() {
     saved.forEach((ev) => {
       const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
       f.set("eventData", ev);
-      if(selected_event && ev.id === selected_event.id) f.setStyle(pinStyle('blue'));
+
+      console.log("Selected Event ID:", selected_event ? selected_event.id : "None");
+      console.log("Current Event ID:", ev.id);
+
+      if(!(selected_event && ev.id === selected_event.id)) f.setStyle(pinStyle('blue'));
       else f.setStyle(new Style({
         image: new CircleStyle({
           radius: 7,
           fill: new Fill({ color: "blue" }),
           stroke: new Stroke({ color: "#ffffff", width: 2 }),
         })}));
+
       eventVector.addFeature(f);
     });
 

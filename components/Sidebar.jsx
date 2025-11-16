@@ -107,7 +107,7 @@ export default function Sidebar() {
         <button
           onClick={tryCreate}
           style={{
-            marginTop: "50%",
+            marginTop: "10%",
             width: "100%",
             padding: "15px",
             background: "black",

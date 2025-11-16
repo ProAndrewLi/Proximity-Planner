@@ -27,25 +27,28 @@ export default function MapClient() {
     const clickLayer = new VectorLayer({
       source: clickVector,
       style: [new Style({
-              image: new Circle({
-                radius: 8.5,
-                fill: new Fill({ color: 'red' }),
-                displacement: [0, 16],
-              })}), 
-              new Style({
-              image: new RegularShape({
-                points: 3,
-                radius: 10,
-                displacement: [0, -10],
-                rotation: Math.PI,
-                fill: new Fill({ color: 'red' }),
-              })}),
-              new Style({
-              image: new Circle({
-                radius: 4,
-                fill: new Fill({ color: 'white' }),
-                displacement: [0, 16],
-              })}),]
+        image: new Circle({
+          radius: 8.5,
+          fill: new Fill({ color: 'red' }),
+          displacement: [0, 16],
+        })
+      }),
+      new Style({
+        image: new RegularShape({
+          points: 3,
+          radius: 10,
+          displacement: [0, -10],
+          rotation: Math.PI,
+          fill: new Fill({ color: 'red' }),
+        })
+      }),
+      new Style({
+        image: new Circle({
+          radius: 4,
+          fill: new Fill({ color: 'white' }),
+          displacement: [0, 16],
+        })
+      }),]
     });
 
     const eventLayer = new VectorLayer({
@@ -66,6 +69,7 @@ export default function MapClient() {
     });
 
     let event_select = false; // Keeps track if an event was selected
+    let selected_event = null;
 
     map.on("click", (evt) => {
       const coord = evt.coordinate;
@@ -81,12 +85,13 @@ export default function MapClient() {
         if (data) {
           event_select = true;
           window.dispatchEvent(new CustomEvent("eventSelected", { detail: data }));
+          selected_event = data;
         }
       });
 
       clickVector.clear();
       const feature = new ol.Feature({ geometry: new Point(coord) });
-      if(!event_select) clickVector.addFeature(feature);
+      if (!event_select) clickVector.addFeature(feature);
       event_select = false;
     });
 
@@ -97,6 +102,26 @@ export default function MapClient() {
       f.set("eventData", ev);
       eventVector.addFeature(f);
     });
+
+    // In your MapClient component, replace the loadEvents function with:
+    const loadEvents = async () => {
+      try {
+        console.log("Loading events...");
+        const events = await getEvents(); // Use the updated function
+
+        events.forEach((ev) => {
+          const f = new ol.Feature({
+            geometry: new Point(fromLonLat([ev.lon, ev.lat]))
+          });
+          f.set("eventData", ev);
+          eventVector.addFeature(f);
+        });
+
+        console.log("Loaded events:", events.length);
+      } catch (error) {
+        console.error("Failed to load events:", error);
+      }
+    };
 
     mapRef.current = map;
   }, []);

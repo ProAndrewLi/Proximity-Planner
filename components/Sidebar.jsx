@@ -80,12 +80,10 @@ export default function Sidebar() {
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOfMonth(currentMonth);
 
-  // Add empty cells for days before the first day of the month
   for (let i = 0; i < firstDay; i++) {
     calendarDays.push(null);
   }
 
-  // Add days of the month
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
   }
@@ -274,470 +272,210 @@ export default function Sidebar() {
   //   Render
   // ---------------------------
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+    <div className="sidebar">
       {/* Background overlay for pickers */}
       {(showDatePicker || showTimePicker) && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.5)",
-          zIndex: 10
-        }} />
+        <div className="overlay" />
       )}
 
-      {/* ------------------------------ */}
-      {/* CREATE BUTTON */}
-      {/* ------------------------------ */}
-      {mode === "create" && (
-        <button
-          onClick={tryCreate}
-          style={{
-            marginTop: "3%",
-            marginLeft: "5%",
-            marginRight: "5%",
-            width: "90%",
-            padding: "15px",
-            background: "black",
-            color: "white",
-            borderRadius: "8px",
-            fontSize: "16px",
-            border: "none",
-            cursor: "pointer"
-          }}
-        >
-          Create Event
-        </button>
-      )}
+      <div className="sidebar-content">
+        {/* CREATE BUTTON */}
+        {mode === "create" && (
+          <button className="create-btn" onClick={tryCreate}>
+            Create Event
+          </button>
+        )}
 
-      {/* ------------------------------ */}
-      {/* NEARBY EVENTS LIST */}
-      {/* ------------------------------ */}
-      {mode === "create" && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>Nearby Events</h3>
+        {/* NEARBY EVENTS LIST */}
+        {mode === "create" && (
+          <div className="nearby-events">
+            <h3>Nearby Events</h3>
 
-          {nearbyEvents.length === 0 && (
-            <p style={{ color: "#777" }}>No events available.</p>
-          )}
+            {nearbyEvents.length === 0 && (
+              <p className="no-events">No events available.</p>
+            )}
 
-          {nearbyEvents.map((ev) => (
-            <div
-              key={ev.id}
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent("eventSelected", { detail: ev })
-                )
-              }
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                marginBottom: "10px",
-                cursor: "pointer",
-                background: "#fafafa"
-              }}
-            >
-              <b>{ev.name}</b>
-              <div style={{ fontSize: "13px", color: "#555" }}>
-                {ev.distance
-                  ? ev.distance < 1000
-                    ? `${Math.round(ev.distance)} m away`
-                    : `${(ev.distance / 1000).toFixed(1)} km away`
-                  : ""}
+            {nearbyEvents.map((ev) => (
+              <div
+                key={ev.id}
+                className={`event-item ${selectedEvent?.id === ev.id ? 'selected' : ''}`}
+                onClick={() => window.dispatchEvent(new CustomEvent("eventSelected", { detail: ev }))}
+              >
+                <div className="event-name">{ev.name}</div>
+                <div className="event-distance">
+                  {ev.distance
+                    ? ev.distance < 1000
+                      ? `${Math.round(ev.distance)} m away`
+                      : `${(ev.distance / 1000).toFixed(1)} km away`
+                    : ""}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* CREATE EVENT FORM */}
+        {mode === "form" && (
+          <div className="form-container">
+            <h2 className="form-title">Create New Event</h2>
+
+            <div className="form-group">
+              <label className="form-label">Event Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="form-input"
+              />
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* ------------------------------ */}
-      {/* CREATE EVENT FORM */}
-      {/* ------------------------------ */}
-      {mode === "form" && (
-        <div>
-          <h2>Create Event</h2>
+            <div className="form-group">
+              <label className="form-label">Organization</label>
+              <input
+                value={org}
+                onChange={(e) => setOrg(e.target.value)}
+                className="form-input"
+              />
+            </div>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-              Event Name
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
-            />
-          </div>
+            {/* Custom Date Picker */}
+            <div className="form-group date-picker-container">
+              <label className="form-label">Date</label>
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="picker-button"
+              >
+                {formatDateDisplay(date)}
+                <span className="picker-arrow">▼</span>
+              </button>
 
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-              Organization
-            </label>
-            <input
-              value={org}
-              onChange={(e) => setOrg(e.target.value)}
-              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
-            />
-          </div>
-
-          {/* Custom Date Picker */}
-          <div style={{ marginBottom: "15px", position: "relative" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-              Date
-            </label>
-
-            <button
-              type="button"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                background: "white",
-                fontSize: "16px",
-                textAlign: "left",
-                cursor: "pointer"
-              }}
-            >
-              {formatDateDisplay(date)}
-              <span style={{ float: "right", color: "#666" }}>📅</span>
-            </button>
-
-            {/* Fancy Calendar Popup */}
-            {showDatePicker && (
-              <div style={{
-                position: "absolute",
-                width: "100%",
-                background: "white",
-                border: "2px solid #0070f3",
-                borderRadius: "8px",
-                marginTop: "5px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                zIndex: 20,
-                overflow: "hidden"
-              }}>
-                {/* Calendar Header */}
-                <div style={{
-                  background: "#0070f3",
-                  color: "white",
-                  padding: "15px",
-                  textAlign: "center"
-                }}>
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "10px"
-                  }}>
-                    <button
-                      onClick={() => navigateMonth(-1)}
-                      style={{
-                        background: "rgba(255,255,255,0.2)",
-                        border: "none",
-                        color: "white",
-                        borderRadius: "4px",
-                        padding: "5px 10px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      ‹
-                    </button>
-                    <div style={{
-                      fontSize: "16px",
-                      fontWeight: "600"
-                    }}>
-                      {formatMonthYear(currentMonth)}
+              {/* Fancy Calendar Popup */}
+              {showDatePicker && (
+                <div className="calendar-popup">
+                  <div className="calendar-header">
+                    <div className="calendar-nav">
+                      <button onClick={() => navigateMonth(-1)} className="nav-button">
+                        ‹
+                      </button>
+                      <div className="month-year">{formatMonthYear(currentMonth)}</div>
+                      <button onClick={() => navigateMonth(1)} className="nav-button">
+                        ›
+                      </button>
                     </div>
-                    <button
-                      onClick={() => navigateMonth(1)}
-                      style={{
-                        background: "rgba(255,255,255,0.2)",
-                        border: "none",
-                        color: "white",
-                        borderRadius: "4px",
-                        padding: "5px 10px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      ›
-                    </button>
+
+                    <div className="day-headers">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="day-header">{day}</div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Day headers */}
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "2px",
-                    fontSize: "12px",
-                    opacity: "0.9"
-                  }}>
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                      <div key={day} style={{ textAlign: "center", padding: "5px 0" }}>
-                        {day}
+                  <div className="calendar-days">
+                    {calendarDays.map((day, index) => (
+                      <div
+                        key={index}
+                        className={`calendar-day ${day ? '' : 'empty'} ${isToday(day) ? 'today' : ''} ${isSelected(day) ? 'selected' : ''}`}
+                        onClick={() => day && handleDateSelect(day)}
+                      >
+                        {day || ""}
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
+            </div>
 
-                {/* Calendar Days */}
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(7, 1fr)",
-                  gap: "2px",
-                  padding: "10px",
-                  background: "white"
-                }}>
-                  {calendarDays.map((day, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        textAlign: "center",
-                        padding: "8px 0",
-                        borderRadius: "4px",
-                        cursor: day ? "pointer" : "default",
-                        background: day ? (
-                          isSelected(day)
-                            ? "#0070f3"
-                            : isToday(day)
-                              ? "#e6f3ff"
-                              : "transparent"
-                        ) : "transparent",
-                        color: day ? (
-                          isSelected(day)
-                            ? "white"
-                            : isToday(day)
-                              ? "#0070f3"
-                              : "#333"
-                        ) : "transparent",
-                        fontWeight: isToday(day) || isSelected(day) ? "600" : "400"
-                      }}
-                      onClick={() => day && handleDateSelect(day)}
-                      onMouseOver={(e) => {
-                        if (day && !isSelected(day)) {
-                          e.target.style.background = "#f0f0f0";
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (day && !isSelected(day)) {
-                          e.target.style.background = isToday(day) ? "#e6f3ff" : "transparent";
-                        }
-                      }}
-                    >
-                      {day || ""}
+            {/* Custom Time Picker */}
+            <div className="form-group time-picker-container">
+              <label className="form-label">Time</label>
+              <button
+                type="button"
+                onClick={() => setShowTimePicker(!showTimePicker)}
+                className="picker-button"
+              >
+                {formatTimeDisplay()}
+                <span className="picker-arrow">▼</span>
+              </button>
+
+              {/* Custom Time Picker Popup */}
+              {showTimePicker && (
+                <div className="time-popup">
+                  <div className="time-selectors">
+                    <div className="time-selector">
+                      <label className="time-label">Hour</label>
+                      <select
+                        value={hour}
+                        onChange={(e) => setHour(e.target.value)}
+                        className="time-select"
+                      >
+                        {hours.map(h => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
+
+                    <div className="time-selector">
+                      <label className="time-label">Minute</label>
+                      <select
+                        value={minute}
+                        onChange={(e) => setMinute(e.target.value)}
+                        className="time-select"
+                      >
+                        {minutes.map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="time-selector">
+                      <label className="time-label">AM/PM</label>
+                      <select
+                        value={ampm}
+                        onChange={(e) => setAmPm(e.target.value)}
+                        className="time-select"
+                      >
+                        {ampmOptions.map(ap => (
+                          <option key={ap} value={ap}>{ap}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowTimePicker(false)}
+                    className="set-time-btn"
+                  >
+                    Set Time
+                  </button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Custom Time Picker */}
-          <div style={{ marginBottom: "20px", position: "relative" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-              Time
-            </label>
-
-            <button
-              type="button"
-              onClick={() => setShowTimePicker(!showTimePicker)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                background: "white",
-                fontSize: "16px",
-                textAlign: "left",
-                cursor: "pointer"
-              }}
-            >
-              {formatTimeDisplay()}
-              <span style={{ float: "right", color: "#666" }}>⏰</span>
+            <button onClick={confirm} className="confirm-btn">
+              Confirm
             </button>
-
-            {/* Custom Time Picker Popup */}
-            {showTimePicker && (
-              <div style={{
-                position: "absolute",
-                width: "100%",
-                background: "white",
-                border: "2px solid #0070f3",
-                borderRadius: "8px",
-                marginTop: "5px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                zIndex: 20,
-                overflow: "hidden",
-                padding: "15px"
-              }}>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "10px"
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "600",
-                      color: "#333",
-                      fontSize: "14px"
-                    }}>
-                      Hour
-                    </label>
-                    <select
-                      value={hour}
-                      onChange={(e) => setHour(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc",
-                        background: "white",
-                        fontSize: "14px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      {hours.map(h => (
-                        <option key={h} value={h}>{h}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "600",
-                      color: "#333",
-                      fontSize: "14px"
-                    }}>
-                      Minute
-                    </label>
-                    <select
-                      value={minute}
-                      onChange={(e) => setMinute(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc",
-                        background: "white",
-                        fontSize: "14px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      {minutes.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <label style={{
-                      display: "block",
-                      marginBottom: "5px",
-                      fontWeight: "600",
-                      color: "#333",
-                      fontSize: "14px"
-                    }}>
-                      AM/PM
-                    </label>
-                    <select
-                      value={ampm}
-                      onChange={(e) => setAmPm(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc",
-                        background: "white",
-                        fontSize: "14px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      {ampmOptions.map(ap => (
-                        <option key={ap} value={ap}>{ap}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowTimePicker(false)}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    background: "#0070f3",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    fontSize: "14px"
-                  }}
-                >
-                  Set Time
-                </button>
-              </div>
-            )}
           </div>
+        )}
 
-          <button
-            onClick={confirm}
-            style={{
-              marginTop: "20px",
-              width: "100%",
-              padding: "10px",
-              background: "#0070f3",
-              color: "white",
-              borderRadius: "6px",
-              fontSize: "16px",
-              cursor: "pointer",
-              border: "none"
-            }}
-          >
-            Confirm
-          </button>
-        </div>
-      )}
+        {/* EVENT DETAILS */}
+        {mode === "details" && selectedEvent && (
+          <div className="details-container">
+            <h2 className="details-title">Event Details</h2>
+            <div className="event-details">
+              <p><span className="detail-label">Name:</span> {selectedEvent.name}</p>
+              <p><span className="detail-label">Organization:</span> {selectedEvent.org}</p>
+              <p><span className="detail-label">Time:</span> {formatDateTime(selectedEvent.time)}</p>
+              <p>
+                <span className="detail-label">Location:</span> {selectedEvent.lat.toFixed(5)}, {selectedEvent.lon.toFixed(5)}
+              </p>
+            </div>
 
-      {/* ------------------------------ */}
-      {/* EVENT DETAILS */}
-      {/* ------------------------------ */}
-      {mode === "details" && selectedEvent && (
-        <div>
-          <h2>Event Info</h2>
-          <p><b>Name:</b> {selectedEvent.name}</p>
-          <p><b>Organization:</b> {selectedEvent.org}</p>
-          <p><b>Time:</b> {formatDateTime(selectedEvent.time)}</p>
-          <p>
-            <b>Location:</b> {selectedEvent.lat.toFixed(5)},{" "}
-            {selectedEvent.lon.toFixed(5)}
-          </p>
-
-          <button
-            onClick={remove}
-            style={{
-              marginTop: "30px",
-              width: "100%",
-              padding: "12px",
-              background: "red",
-              color: "white",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              border: "none"
-            }}
-          >
-            Delete Event
-          </button>
-        </div>
-      )}
+            <button onClick={remove} className="delete-btn">
+              Delete Event
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

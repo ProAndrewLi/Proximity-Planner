@@ -23,6 +23,7 @@ export default function MapClient() {
   const mapRef = useRef(null);
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
+  
   let userCoord = null;
 
   useEffect(() => {
@@ -91,23 +92,33 @@ export default function MapClient() {
         eventVector.addFeature(f);
       });
 
-      // Add dashed line
-      if (userCoord) {
-        const line = new LineString([(selected_event)?fromLonLat([selected_event.lon, selected_event.lat]):fromLonLat([lon, lat]), fromLonLat(userCoord)]);
-        const lineFeature = new Feature({
-          geometry: line,
-        });
-        const lineStyle = new Style({
-          stroke: new Stroke({
-            color: 'blue',
-            width: 2,
-            lineDash: [10, 10], // Dotted pattern: [dash length, gap length]
-          }),
-        });
+      
 
-        lineFeature.setStyle(lineStyle);
-        eventVector.addFeature(lineFeature);
-      }
+      // Add dashed line
+      // if (userCoord) {
+      //   const line = new LineString([(selected_event)?fromLonLat([selected_event.lon, selected_event.lat]):fromLonLat([lon, lat]), fromLonLat(userCoord)]);
+      //   const lineFeature = new Feature({
+      //     geometry: line,
+      //   });
+      //   const lineStyle = new Style({
+      //     stroke: new Stroke({
+      //       color: 'blue',
+      //       width: 2,
+      //       lineDash: [5, 5], // Dotted pattern: [dash length, gap length]
+      //     }),
+      //   });
+
+      //   const lineVector = new VectorSource({ 
+      //     features: [lineFeature],
+      //   });
+
+      //   const lineLayer = new VectorLayer({
+      //     source: lineVector,
+      //   });
+
+      //   lineFeature.setStyle(lineStyle);
+      //   lineVector.addFeature(lineFeature);
+      // }
     });
 
     window.addEventListener("eventSelected", (e) => {

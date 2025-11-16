@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { saveEvent, deleteEvent, getEvent } from "../lib/events.js";
-import "./Sidebar.css";
 
 export default function Sidebar() {
   const [mode, setMode] = useState("create");

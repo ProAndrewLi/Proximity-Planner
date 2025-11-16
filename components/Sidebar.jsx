@@ -15,7 +15,9 @@ export default function Sidebar() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const [nearbyEvents, setNearbyEvents] = useState([]);
+  const [eventsToShow, setEventsToShow] = useState([]);
+  const [isFiltered, setIsFiltered] = useState(false);
+  const [filterDistance, setFilterDistance] = useState(null);
 
   const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
@@ -23,7 +25,6 @@ export default function Sidebar() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState("");
-  const [filteredEvents, setFilteredEvents] = useState(null);
 
   // Get today's date in local timezone without timezone conversion
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function Sidebar() {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     const formatDate = `${year}-${month}-${day}`;
-    
+
     setDate(formatDate);
     setSelectedDate(formatDate);
   }, []);
@@ -59,10 +60,10 @@ export default function Sidebar() {
     // Create date using local timezone components
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    
+
     // Format the date as YYYY-MM-DD without timezone conversion
     const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
+
     setDate(formattedDate);
     setSelectedDate(formattedDate);
     setShowDatePicker(false);
@@ -73,19 +74,19 @@ export default function Sidebar() {
     const today = new Date();
     const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const compareDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    
+
     return todayLocal.getTime() === compareDate.getTime();
   };
 
   // Check if day is selected using local date comparison
   const isSelected = (day) => {
     if (!selectedDate) return false;
-    
+
     // Create dates for comparison using local timezone
     const [yearStr, monthStr, dayStr] = selectedDate.split('-').map(Number);
     const selectedDateLocal = new Date(yearStr, monthStr - 1, dayStr);
     const compareDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    
+
     return selectedDateLocal.getTime() === compareDate.getTime();
   };
 
@@ -103,16 +104,16 @@ export default function Sidebar() {
   }
 
   // ---------------------------
-  //   Load Events Sorted by Distance
+  //   Load Events and Handle Filters
   // ---------------------------
   useEffect(() => {
-    const loadNearby = async () => {
+    const loadInitialEvents = async () => {
       try {
         const events = await getEvent();
 
         if (!navigator.geolocation) {
           console.warn("No geolocation available.");
-          setNearbyEvents(events);
+          setEventsToShow(events);
           return;
         }
 
@@ -128,11 +129,11 @@ export default function Sidebar() {
               }))
               .sort((a, b) => a.distance - b.distance);
 
-            setNearbyEvents(sorted);
+            setEventsToShow(sorted);
           },
           () => {
             console.warn("User denied location access.");
-            setNearbyEvents(events);
+            setEventsToShow(events);
           }
         );
       } catch (err) {
@@ -140,7 +141,50 @@ export default function Sidebar() {
       }
     };
 
-    loadNearby();
+    // Listen for filtered events from MapClient
+    const handleFilteredEvents = (e) => {
+      const { events, isFiltered: filtered, filterDistance: distance } = e.detail;
+
+      if (!navigator.geolocation) {
+        setEventsToShow(events);
+        setIsFiltered(filtered);
+        setFilterDistance(distance);
+        return;
+      }
+
+      // Sort filtered events by distance if we have user location
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userLat = pos.coords.latitude;
+          const userLon = pos.coords.longitude;
+
+          const sorted = events
+            .map((ev) => ({
+              ...ev,
+              distance: haversine(userLat, userLon, ev.lat, ev.lon),
+            }))
+            .sort((a, b) => a.distance - b.distance);
+
+          setEventsToShow(sorted);
+          setIsFiltered(filtered);
+          setFilterDistance(distance);
+        },
+        () => {
+          // If location access is denied, still show events but can't sort by distance
+          setEventsToShow(events);
+          setIsFiltered(filtered);
+          setFilterDistance(distance);
+        }
+      );
+    };
+
+    loadInitialEvents();
+
+    window.addEventListener("filteredEvents", handleFilteredEvents);
+
+    return () => {
+      window.removeEventListener("filteredEvents", handleFilteredEvents);
+    };
   }, []);
 
   // Haversine distance in meters
@@ -183,16 +227,6 @@ export default function Sidebar() {
     };
   }, []);
 
-  useEffect(() => {
-    const handler = (e) => {
-      setFilteredEvents(e.detail);   // list of filtered events
-    };
-
-    window.addEventListener("filteredEvents", handler);
-
-    return () => window.removeEventListener("filteredEvents", handler);
-  }, []);
-
   // Close event details
   const closeDetails = () => {
     setSelectedEvent(null);
@@ -227,14 +261,14 @@ export default function Sidebar() {
       await saveEvent(event);
       setName("");
       setOrg("");
-      
+
       // Reset date without timezone issues
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
       const todayFormatted = `${year}-${month}-${day}`;
-      
+
       setDate(todayFormatted);
       setSelectedDate(todayFormatted);
       setHour("12");
@@ -329,16 +363,33 @@ export default function Sidebar() {
           </button>
         )}
 
-        {/* NEARBY EVENTS LIST */}
+        {/* EVENTS LIST - UPDATED */}
         {mode === "create" && (
           <div className="nearby-events">
-            <h3>Nearby Events</h3>
+            <div className="events-header">
+              <h3>
+                {isFiltered
+                  ? `Events within ${filterDistance} km`
+                  : 'Nearby Events'
+                }
+                {isFiltered && (
+                  <span className="filter-indicator">
+                    ({eventsToShow.length} found)
+                  </span>
+                )}
+              </h3>
+            </div>
 
-            {nearbyEvents.length === 0 && (
-              <p className="no-events">No events available.</p>
+            {eventsToShow.length === 0 && (
+              <p className="no-events">
+                {isFiltered
+                  ? "No events found within this distance."
+                  : "No events available."
+                }
+              </p>
             )}
 
-            {(filteredEvents ?? nearbyEvents).map((ev) => (
+            {eventsToShow.map((ev) => (
               <div
                 key={ev.id}
                 className={`event-item ${selectedEvent?.id === ev.id ? 'selected' : ''}`}
@@ -505,7 +556,7 @@ export default function Sidebar() {
           <div className="details-container">
             <div className="details-header">
               <h2 className="details-title">Event Details</h2>
-              <button 
+              <button
                 className="close-button"
                 onClick={closeDetails}
                 aria-label="Close details"

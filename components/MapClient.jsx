@@ -23,6 +23,7 @@ export default function MapClient() {
   const clickVector = new VectorSource();
   const eventVector = new VectorSource();
   const userLocationSource = new VectorSource();
+  const routeSource = new VectorSource();
 
   let userLocation = null;
   let selectedEventId = null;
@@ -62,6 +63,16 @@ export default function MapClient() {
         clickLayer,
         eventLayer,
         userLocationLayer,
+        new VectorLayer({
+          source: routeSource,
+          style: new Style({
+            stroke: new Stroke({
+              color: "red",
+              width: 2,
+              lineDash: [10, 10],  // dotted pattern
+            }),
+          }),
+        }),
       ],
       view: new View({
         center: fromLonLat([-73.6767, 42.72998]),
@@ -87,9 +98,14 @@ export default function MapClient() {
       selectedEventId = clickedEvent ? clickedEvent.id : null;
 
       if (clickedEvent) {
+        drawRouteToEvent(clickedEvent);
+
         window.dispatchEvent(
           new CustomEvent("eventSelected", { detail: clickedEvent })
         );
+      } else {
+        // Clicked empty space → remove dotted line
+        clearRoute();
       }
 
       renderEvents();
@@ -103,7 +119,13 @@ export default function MapClient() {
         fullEventList = await getEvent();
         renderEvents();
         window.dispatchEvent(
-          new CustomEvent("filteredEvents", { detail: fullEventList })
+          new CustomEvent("filteredEvents", {
+            detail: {
+              events: fullEventList,
+              isFiltered: false,
+              filterDistance: null
+            }
+          })
         );
       } catch (err) {
         console.error("Failed to load events:", err);
@@ -155,6 +177,8 @@ export default function MapClient() {
 
       selectedEventId = ev.id;
 
+      drawRouteToEvent(ev);
+
       map.getView().animate({
         center: fromLonLat([ev.lon, ev.lat]),
         zoom: 18,
@@ -165,6 +189,11 @@ export default function MapClient() {
     }
 
     window.addEventListener("eventSelected", handleSidebarSelect);
+    window.addEventListener("clearDetails", () => {
+      selectedEventId = null;
+      clearRoute();
+      renderEvents();
+    });
 
     /* --------------------------
      *  USER LOCATION
@@ -203,6 +232,28 @@ export default function MapClient() {
     }
 
     /* --------------------------
+    * DRAW SELECTED ROUTE
+    * -------------------------- */
+    function drawRouteToEvent(ev) {
+      if (!userLocation) return;
+
+      routeSource.clear();
+
+      const start = fromLonLat(userLocation);
+      const end = fromLonLat([ev.lon, ev.lat]);
+
+      const line = new ol.Feature({
+        geometry: new ol.geom.LineString([start, end]),
+      });
+
+      routeSource.addFeature(line);
+    }
+
+    function clearRoute() {
+      routeSource.clear();
+    }
+
+    /* --------------------------
      *  FILTER BUTTON
      * -------------------------- */
     document.getElementById("applyDistance").onclick = () => {
@@ -224,9 +275,38 @@ export default function MapClient() {
       renderEvents(filtered);
 
       window.dispatchEvent(
-        new CustomEvent("filteredEvents", { detail: filtered })
+        new CustomEvent("filteredEvents", {
+          detail: {
+            events: filtered,
+            isFiltered: true,
+            filterDistance: km
+          }
+        })
       );
     };
+
+    /* --------------------------
+     *  CLEAR FILTERS FUNCTION
+     * -------------------------- */
+    function clearFilters() {
+      renderEvents(fullEventList);
+      document.getElementById("distanceInput").value = "";
+
+      window.dispatchEvent(
+        new CustomEvent("filteredEvents", {
+          detail: {
+            events: fullEventList,
+            isFiltered: false,
+            filterDistance: null
+          }
+        })
+      );
+    }
+
+    /* --------------------------
+     *  CLEAR FILTERS BUTTON
+     * -------------------------- */
+    document.getElementById("clearFilters").onclick = clearFilters;
 
     /* --------------------------
      *  RECENTER BUTTON
@@ -344,33 +424,63 @@ export default function MapClient() {
           </div>
         </div>
 
-        {/* Recenter */}
-        <button
-          id="recenterBtn"
-          style={{
-            padding: "14px 16px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "14px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-            fontFamily: "'Inter', sans-serif"
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = "translateY(-2px)";
-            e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = "translateY(0)";
-            e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
-          }}
-        >
-          Recenter to My Location
-        </button>
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            id="clearFilters"
+            style={{
+              padding: "14px 16px",
+              background: "linear-gradient(135deg, #718096 0%, #4a5568 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              flex: 1,
+              boxShadow: "0 4px 12px rgba(113, 128, 150, 0.3)",
+              fontFamily: "'Inter', sans-serif"
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(113, 128, 150, 0.4)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 12px rgba(113, 128, 150, 0.3)";
+            }}
+          >
+            Clear Filters
+          </button>
+          <button
+            id="recenterBtn"
+            style={{
+              padding: "14px 16px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              flex: 1,
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+              fontFamily: "'Inter', sans-serif"
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
+            }}
+          >
+            Recenter
+          </button>
+        </div>
       </div>
 
       <div id="map" style={{ width: "100%", height: "100%" }} />

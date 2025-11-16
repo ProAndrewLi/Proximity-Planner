@@ -133,7 +133,7 @@ export default function Sidebar() {
   const remove = async () => {
     if (!selectedEvent) return;
 
-    // if (!confirm("Delete this event?")) return;
+    if (!window.confirm("Confirm deletion of this event?")) return;
 
     try {
       await deleteEvent(selectedEvent.id);
@@ -269,14 +269,14 @@ export default function Sidebar() {
           </div>
 
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
               Date
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", background: "white" }}
             />
           </div>
 

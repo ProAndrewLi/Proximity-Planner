@@ -30,18 +30,11 @@ export default function MapClient() {
 
     const clickLayer = new VectorLayer({
       source: clickVector,
-      style: pinStyle('red')
+      style: pinStyle('blue')
     });
 
     const eventLayer = new VectorLayer({
       source: eventVector,
-      style: new Style({
-        // image: new CircleStyle({
-        //   radius: 7,
-        //   fill: new Fill({ color: "#0066ff" }),
-        //   stroke: new Stroke({ color: "#ffffff", width: 2 }),
-        // }),
-      }),
     });
 
     const map = new ol.Map({
@@ -87,11 +80,11 @@ export default function MapClient() {
         const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
         f.set("eventData", ev);
 
-        if(selected_event && ev.id === selected_event.id) f.setStyle(pinStyle('blue'));
+        if(selected_event && ev.id === selected_event.id) f.setStyle(pinStyle('red'));
         else f.setStyle(new Style({
           image: new CircleStyle({
             radius: 7,
-            fill: new Fill({ color: "blue" }),
+            fill: new Fill({ color: "red" }),
             stroke: new Stroke({ color: "#ffffff", width: 2 }),
           })}));
 
@@ -108,7 +101,7 @@ export default function MapClient() {
       f.setStyle(new Style({
         image: new CircleStyle({
           radius: 7,
-          fill: new Fill({ color: "blue" }),
+          fill: new Fill({ color: "red" }),
           stroke: new Stroke({ color: "#ffffff", width: 2 }),
         })}));
 
@@ -150,6 +143,47 @@ export default function MapClient() {
       }
     });
 
+    // --- USER LOCATION LAYER ---
+const userLocationSource = new VectorSource();
+
+const userLocationLayer = new VectorLayer({
+  source: userLocationSource,
+  style: new Style({
+    image: new CircleStyle({
+      radius: 8,
+      fill: new Fill({ color: "blue" }),
+      stroke: new Stroke({ color: "white", width: 2 })
+    })
+  })
+});
+
+// Add user layer to map
+map.addLayer(userLocationLayer);
+
+// Attempt to get user's location
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const userLon = pos.coords.longitude;
+      const userLat = pos.coords.latitude;
+
+      const userPoint = new ol.Feature({
+        geometry: new Point(fromLonLat([userLon, userLat])),
+      });
+
+      // Add the red circle marker
+      userLocationSource.clear();
+      userLocationSource.addFeature(userPoint);
+
+      // Center map on user
+      map.getView().setCenter(fromLonLat([userLon, userLat]));
+      map.getView().setZoom(17);
+    },
+    () => {
+      console.warn("User denied geolocation — using default location.");
+    }
+  );
+}
     mapRef.current = map;
   }, []);
 

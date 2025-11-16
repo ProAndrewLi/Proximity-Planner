@@ -23,6 +23,7 @@ export default function Sidebar() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState("");
+  const [filteredEvents, setFilteredEvents] = useState(null);
 
   // Get today's date in local timezone without timezone conversion
   useEffect(() => {
@@ -182,6 +183,16 @@ export default function Sidebar() {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = (e) => {
+      setFilteredEvents(e.detail);   // list of filtered events
+    };
+
+    window.addEventListener("filteredEvents", handler);
+
+    return () => window.removeEventListener("filteredEvents", handler);
+  }, []);
+
   // Close event details
   const closeDetails = () => {
     setSelectedEvent(null);
@@ -327,7 +338,7 @@ export default function Sidebar() {
               <p className="no-events">No events available.</p>
             )}
 
-            {nearbyEvents.map((ev) => (
+            {(filteredEvents ?? nearbyEvents).map((ev) => (
               <div
                 key={ev.id}
                 className={`event-item ${selectedEvent?.id === ev.id ? 'selected' : ''}`}

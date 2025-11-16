@@ -183,7 +183,6 @@ export default function MapClient() {
         map.getView().setCenter(fromLonLat(userLocation));
         map.getView().setZoom(17);
       });
-      window.location.reload();
     }
 
     /* --------------------------
@@ -286,7 +285,7 @@ export default function MapClient() {
               marginBottom: "4px"
             }}
           >
-            Max Distance (km)
+            Max Distance (KM)
           </label>
           <div style={{ display: "flex", gap: "10px" }}>
             <input

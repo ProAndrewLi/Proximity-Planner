@@ -87,9 +87,6 @@ export default function MapClient() {
         const f = new ol.Feature({ geometry: new Point(fromLonLat([ev.lon, ev.lat])) });
         f.set("eventData", ev);
 
-        console.log("Selected Event ID:", selected_event ? selected_event.id : "None");
-        console.log("Current Event ID:", ev.id);
-
         if(selected_event && ev.id === selected_event.id) f.setStyle(pinStyle('blue'));
         else f.setStyle(new Style({
           image: new CircleStyle({

@@ -334,7 +334,6 @@ export default function MapClient() {
 
       map.getView().animate({
         center: fromLonLat(userLocation),
-        zoom: 17,
         duration: 300,
       });
     };

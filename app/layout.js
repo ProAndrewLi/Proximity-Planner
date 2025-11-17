@@ -6,6 +6,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head><title>ProximityPlanner</title></head>
       <body>{children}</body>
     </html>
   )

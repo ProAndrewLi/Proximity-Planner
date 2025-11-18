@@ -1,12 +1,9 @@
 # Proximity Planner
 
-Run using `npm install` then `npm run dev`.
+# To Run Locally:
+`npm install` and `npm run dev`
 
-May need to run `npm install firebase`
-
-
-# TODO
-
+## TODO: 
 - Admin privileges
 - Sign in
 - Only allow authorized event organizers to add and delete
@@ -20,6 +17,7 @@ May need to run `npm install firebase`
 - Overhaul the entire UI
 - Filter content (spam, profanity)
 - Continuous checking user location for changes 
+- When allowing location first, it does not show. 
 
 ## Bugs
 

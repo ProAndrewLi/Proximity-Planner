@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import "ol/ol.css";
+import "./ol/ol.css";
 import * as ol from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
@@ -98,6 +98,9 @@ export default function MapClient() {
 
       selectedEventId = clickedEvent ? clickedEvent.id : null;
 
+      // Always clear the red pin first
+      clickVector.clear();
+
       if (clickedEvent) {
         drawRouteToEvent(clickedEvent);
 
@@ -105,11 +108,10 @@ export default function MapClient() {
           new CustomEvent("eventSelected", { detail: clickedEvent })
         );
       } else {
-        // Clicked empty space → remove dotted line AND add red pin
+        // Clicked empty space → remove dotted line and add red pin
         clearRoute();
-        
-        // Clear any existing click pins and add new red pin
-        clickVector.clear();
+
+        // Add new red pin for the clicked location
         const clickFeature = new ol.Feature({
           geometry: new Point(evt.coordinate),
         });
@@ -242,9 +244,9 @@ export default function MapClient() {
 
       const a =
         Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
+          Math.cos(lat1 * Math.PI / 180) *
+            Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
 
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
@@ -334,6 +336,7 @@ export default function MapClient() {
 
       map.getView().animate({
         center: fromLonLat(userLocation),
+        zoom: 17,
         duration: 300,
       });
     };

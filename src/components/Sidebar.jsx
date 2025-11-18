@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { saveEvent, deleteEvent, getEvent } from "../lib/events.js";
+import "./Sidebar.css";
 
 export default function Sidebar() {
   const [mode, setMode] = useState("create");
@@ -123,11 +124,11 @@ export default function Sidebar() {
             const userLon = pos.coords.longitude;
 
             const sorted = events
-              .map((ev) => ({
-                ...ev,
-                distance: haversine(userLat, userLon, ev.lat, ev.lon),
-              }))
-              .sort((a, b) => a.distance - b.distance);
+            .map((ev) => ({
+              ...ev,
+              distance: haversine(userLat, userLon, ev.lat, ev.lon),
+            }))
+            .sort((a, b) => a.distance - b.distance);
 
             setEventsToShow(sorted);
           },
@@ -159,11 +160,11 @@ export default function Sidebar() {
           const userLon = pos.coords.longitude;
 
           const sorted = events
-            .map((ev) => ({
-              ...ev,
-              distance: haversine(userLat, userLon, ev.lat, ev.lon),
-            }))
-            .sort((a, b) => a.distance - b.distance);
+          .map((ev) => ({
+            ...ev,
+            distance: haversine(userLat, userLon, ev.lat, ev.lon),
+          }))
+          .sort((a, b) => a.distance - b.distance);
 
           setEventsToShow(sorted);
           setIsFiltered(filtered);
@@ -199,7 +200,7 @@ export default function Sidebar() {
 
     const a =
       Math.sin(dφ / 2) ** 2 +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
@@ -368,8 +369,8 @@ export default function Sidebar() {
           <div className="nearby-events">
             <div className="events-header">
               <h3>
-                {isFiltered
-                  ? `Events within ${filterDistance} km`
+                {isFiltered 
+                  ? `Events within ${filterDistance} km` 
                   : 'Nearby Events'
                 }
                 {isFiltered && (
@@ -382,8 +383,8 @@ export default function Sidebar() {
 
             {eventsToShow.length === 0 && (
               <p className="no-events">
-                {isFiltered
-                  ? "No events found within this distance."
+                {isFiltered 
+                  ? "No events found within this distance." 
                   : "No events available."
                 }
               </p>
@@ -556,7 +557,7 @@ export default function Sidebar() {
           <div className="details-container">
             <div className="details-header">
               <h2 className="details-title">Event Details</h2>
-              <button
+              <button 
                 className="close-button"
                 onClick={closeDetails}
                 aria-label="Close details"

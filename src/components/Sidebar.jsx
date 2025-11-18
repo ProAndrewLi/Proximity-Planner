@@ -360,7 +360,7 @@ export default function Sidebar() {
         {/* CREATE BUTTON */}
         {mode === "create" && (
           <button className="create-btn" onClick={tryCreate}>
-            Create Event
+            Create New Event
           </button>
         )}
 

@@ -19,15 +19,17 @@ May need to run `npm install firebase`
 - When an event is deleted, reload the page automatically
 - Overhaul the entire UI
 - Filter content (spam, profanity)
+- Continuous checking user location for changes 
 
 ## Bugs
 
 - If filter is enabled and click anywhere on the map, the filtered out events will reappear on the map.
 - If events are off screen and then click and drag to it, it won't show up until release.
 
-# Ideas
+## Future Ideas
 
 - Friends list, confirming attendance to events (different window with events calendar)
 - Path planning that determines time of travel between events (if enabled)
 - If an event is travelling, a path can be added with time targets for each location (can be integrated with idea below)
 - If an event is running at multiple locations, allow different points to be linked to each other for easy access
+- Calendar that shows your upcoming events that you confirmed for (the actual planner part)
